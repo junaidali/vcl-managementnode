@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# USERNAME="jdoe"
+
+USERNAME="$1"
+
+if [[ $UID -ne 0 ]]; then
+   echo " sorry, must be root to run this script"
+   exit 1
+fi
+
+RESULT=$(dscl . list /Users | grep "^$USERNAME\$")
+if [ -z "$RESULT" ]; then
+  echo " user account \"$USERNAME\" does not exist"
+  exit 1
+fi
+
+# not needed for leopard. 'staff' is the effective group id, and
+# 'staff' doesn't exist in dscl
+#
+# this shows effective, real, and supplementary groups
+# USER_GROUPS="$(/usr/bin/id -Gn $USERNAME)"
+# USER_GROUPS=$(/usr/bin/dscl . -search /Groups GroupMembership $USERNAME)"
+# if [[ -n "$USER_GROUPS" ]]; then 
+#    # delete the USERNAME's group memberships
+#    for GROUP in $USER_GROUPS; do
+#       dscl . -delete "/Groups/$GROUP"  GroupMembership "$USERNAME"
+#    done
+# fi
+
+dscl . -delete /Users/$USERNAME
+
+rm -r /Users/$USERNAME > /dev/null
+
+# list current USERNAMEs
+# dscl . list /Users
+
+RESULT=$(dscl . list /Users | grep "^$USERNAME\$")
+if [ -z "$RESULT" ]; then
+  echo " User account \"$USERNAME\" deleted: `date`"
+else
+  echo " User account \"$USERNAME\" NOT deleted"
+fi
+
+

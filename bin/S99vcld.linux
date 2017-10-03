@@ -1,0 +1,115 @@
+#!/bin/bash
+##############################################################################
+# $Id: S99vcld.linux 1635486 2014-10-30 12:59:58Z fapeeler $
+###############################################################################
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##############################################################################
+
+# chkconfig: 45 99 99
+# description: VCL management node daemon
+
+# DAEMON: Name of the daemon executable
+DAEMON=vcld
+
+# DAEMON_PATH: Path to the daemon, no trailing '/'
+DAEMON_PATH=/usr/local/vcl/bin
+
+# DAEMON_OPTIONS: options for the daemon, these can be overridden by
+# setting DAEMON_OPTIONS in /etc/sysconfig/$DAEMON
+DAEMON_OPTIONS='-v -conf=/etc/vcl/vcld.conf'
+
+
+# You shouldn't need to edit anything below here
+# --------------------------------------------------------------------
+
+# Source function library.
+. /etc/init.d/functions
+
+#[ -f $DAEMON_PATH/$DAEMON ] || exit 0
+
+# Source config
+if [ -f /etc/sysconfig/$DAEMON ] ; then
+	. /etc/sysconfig/$DAEMON
+fi
+
+RETVAL=0
+
+umask 077
+
+start() {
+ 	echo -n $"Starting $DAEMON daemon: "
+	daemon $DAEMON_PATH/$DAEMON $DAEMON_OPTIONS
+	RETVAL=$?
+    if [ $RETVAL -eq 0 ]; then
+        success
+        touch /var/lock/subsys/$DAEMON
+    else
+        failure
+    fi
+	echo
+	return $RETVAL
+}	
+stop() {
+	echo -n $"Shutting down $DAEMON daemon: "
+	kill -9 `/bin/cat /var/run/$DAEMON.pid` 2>/dev/null
+    RETVAL=$?
+    if [ $RETVAL -eq 0 ]; then
+        rm -f /var/lock/subsys/$DAEMON
+        success
+    else
+        failure
+    fi
+	echo
+	return $RETVAL
+}
+_status() {
+	status vcld
+}
+restart() {
+	stop
+	sleep 1
+	start
+}	
+
+case "$1" in
+  start)
+  	start
+	;;
+  stop)
+  	stop
+	;;
+  status)
+	# modified this not to call _status because that was matching vcldev
+	if line=`/bin/ps aux | /bin/egrep -e 'vcld( )*$'` ; then 
+		pid=`echo $line | /bin/awk '{print $2}'`
+		echo vcld \(pid $pid\) is running...
+	else
+		echo no vcld processes found
+		exit 1
+	fi
+	;;
+  restart|reload)
+  	restart
+	;;
+  condrestart)
+  	[ -f /var/lock/subsys/$DAEMON ] && restart || :
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|status|restart|condrestart}"
+	exit 1
+esac
+
+exit $?

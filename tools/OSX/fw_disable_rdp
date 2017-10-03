@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# $1 = flag to remove persistence
+#
+# we rely on the explicit "deny" at the end of the filter table
+# all we need to do is remove the "allow" setting
+
+if [ -n "$1" ]; then
+   persist=1
+fi
+
+if [ -n "$(ipfw list | grep 'dst-port 3389')" ]; then
+   ipfw delete `ipfw list | grep "dst-port 3389" | cut -f1 -d" "`
+fi
+
+if [ -n "$persist" ]; then 
+   if [ -n "$(grep 'dst-port 3389' /etc/ipfilter/ipfw.conf)" ]; then
+      grep -v "dst-port 3389" /etc/ipfilter/ipfw.conf > /tmp/$$
+      cat /tmp/$$ > /etc/ipfilter/ipfw.conf
+      rm /tmp/$$
+   fi
+fi
+
