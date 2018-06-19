@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 ###############################################################################
-# $Id: utils.pm 1801786 2017-07-12 22:57:35Z arkurth $
+# $Id$
 ###############################################################################
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with

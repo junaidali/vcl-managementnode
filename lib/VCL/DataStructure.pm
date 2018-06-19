@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 ###############################################################################
-# $Id: DataStructure.pm 1801787 2017-07-12 23:06:01Z arkurth $
+# $Id$
 ###############################################################################
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with

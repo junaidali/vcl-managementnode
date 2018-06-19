@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 ###############################################################################
-# $Id: 8.pm 1803661 2017-08-01 15:43:55Z arkurth $
+# $Id$
 ###############################################################################
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with

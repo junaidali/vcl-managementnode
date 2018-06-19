@@ -1,6 +1,6 @@
 #!/bin/bash
 ###############################################################################
-# $Id: cygwin-sshd-config.sh 1801224 2017-07-07 21:28:57Z arkurth $
+# $Id$
 ###############################################################################
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with

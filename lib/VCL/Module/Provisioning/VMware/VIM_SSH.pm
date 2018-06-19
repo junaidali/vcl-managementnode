@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 ###############################################################################
-# $Id: VIM_SSH.pm 1804684 2017-08-10 16:07:09Z arkurth $
+# $Id$
 ###############################################################################
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with

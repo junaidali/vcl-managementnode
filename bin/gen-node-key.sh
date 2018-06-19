@@ -1,6 +1,6 @@
 #!/bin/bash
 ###############################################################################
-# $Id: gen-node-key.sh 1310054 2012-04-05 20:23:21Z fapeeler $
+# $Id$
 ###############################################################################
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
