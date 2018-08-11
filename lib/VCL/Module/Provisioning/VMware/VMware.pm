@@ -947,8 +947,8 @@ sub capture {
 	}
 	
 	# Tag the .vmx with the OS product name and architecture
-	$self->vmhost_os->append_text_file($vmx_file_path_original, "#os_product_name = \"$os_product_name\"") if (defined($os_product_name));
-	$self->vmhost_os->append_text_file($vmx_file_path_original, "#os_64_bit = \"$os_is_64_bit\"") if (defined($os_is_64_bit));
+	# $self->vmhost_os->append_text_file($vmx_file_path_original, "#os_product_name = \"$os_product_name\"") if (defined($os_product_name));
+	# $self->vmhost_os->append_text_file($vmx_file_path_original, "#os_64_bit = \"$os_is_64_bit\"") if (defined($os_is_64_bit));
 	
 	
 	if ($vmprofile_vmdisk =~ /(local|dedicated)/ && $repository_mounted_on_vmhost) {
