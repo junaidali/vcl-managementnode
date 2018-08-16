@@ -218,13 +218,23 @@ image.lastupdate = '$timestamp',
 image.deleted = '0',
 image.size = '$image_size_new',
 image.name = '$image_name',
+EOF
+	
+	if ($self->data->get_image_uefi() == 1) {
+		$update_image_statement .= <<EOF
+image.uefi = '1',
+EOF
+	}
+
+	$update_image_statement .= <<EOF;
 imagerevision.deleted = '0',
 imagerevision.datecreated = '$timestamp'
 WHERE
 image.id = $image_id
 AND imagerevision.id = $imagerevision_id
 EOF
-	
+
+	notify($ERRORS{'DEBUG'}, 0, "running image update query $update_image_statement");
 	# Execute the image update statement
 	if (database_execute($update_image_statement)) {
 		notify($ERRORS{'OK'}, 0, "image and imagerevision tables updated for image=$image_id, imagerevision=$imagerevision_id, name=$image_name, lastupdate=$timestamp, deleted=0, size=$image_size_new");
