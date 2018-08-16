@@ -7023,6 +7023,12 @@ sub copy_capture_configuration_files {
 		}
 	}
 	
+	# Attempt to create the Logs directory if it doesn't already exist
+	if (!$self->create_directory("$NODE_CONFIGURATION_DIRECTORY/Logs")) {
+		notify($ERRORS{'WARNING'}, 0, "unable to create directory on $computer_node_name: $NODE_CONFIGURATION_DIRECTORY/Logs");
+		return;
+	}
+
 	# Delete any Subversion files which may have been copied
 	if (!$self->delete_files_by_pattern($NODE_CONFIGURATION_DIRECTORY, '.*\.svn.*')) {
 		notify($ERRORS{'WARNING'}, 0, "unable to delete Subversion files under: $NODE_CONFIGURATION_DIRECTORY");
