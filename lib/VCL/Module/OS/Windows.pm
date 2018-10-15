@@ -14444,8 +14444,8 @@ sub ad_search {
 	# Get computer private IP address for active directory site calculation
 	my $current_private_ip_address = $self->get_private_ip_address();
 	my $current_private_subnet_mask = $self->get_private_subnet_mask();
-	my $private_network_cidr = '';
-	$private_network_cidr = convert_dotted_decimal_to_cidr($current_private_ip_address, $current_private_subnet_mask);
+	my $vm_subnet = '';
+	$vm_subnet = convert_dotted_decimal_to_cidr($current_private_ip_address, $current_private_subnet_mask);
 
 	my $attempt_limit = $arguments->{attempt_limit} || 3;
 	
@@ -14488,7 +14488,7 @@ Clear-Host
 \$domain_password = '$domain_password_escaped'
 \$ldap_filter = '$ldap_filter'
 \$delete = '$delete'
-\$vm_subnet = '$private_network_cidr'
+\$vm_subnet = '$vm_subnet'
 \$vm_site = \$null
 \$subnet_found = \$false
 \$entry_found = \$false
