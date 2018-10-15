@@ -14413,8 +14413,7 @@ sub ad_search {
 	
 	my $domain_dns_name;
 	my $domain_username;
-	my $domain_password;
-	my $vm_site = "MC";
+	my $domain_password;	
 	my $image_domain_dns_name = $self->data->get_image_domain_dns_name(0) || '';
 	if (defined($arguments->{domain_dns_name}) && $arguments->{domain_dns_name} ne $image_domain_dns_name) {
 		$domain_dns_name = $arguments->{domain_dns_name};
@@ -14442,6 +14441,12 @@ sub ad_search {
 		return;
 	}
 	
+	# Get computer private IP address for active directory site calculation
+	my $current_private_ip_address = $self->get_private_ip_address();
+	my $current_private_subnet_mask = $self->get_private_subnet_mask();
+	my $private_network_cidr = '';
+	$private_network_cidr = convert_dotted_decimal_to_cidr($current_private_ip_address, $current_private_subnet_mask);
+
 	my $attempt_limit = $arguments->{attempt_limit} || 3;
 	
 	# This sub handles both search and delete under very strict conditions
@@ -14483,20 +14488,57 @@ Clear-Host
 \$domain_password = '$domain_password_escaped'
 \$ldap_filter = '$ldap_filter'
 \$delete = '$delete'
-\$vm_site = '$vm_site'
+\$vm_subnet = '$private_network_cidr'
+\$vm_site = \$null
+\$subnet_found = \$false
 \$entry_found = \$false
 \$entry_deleted = \$false
 
 Write-Host "domain: $domain_dns_name"
 Write-Host "domain username (between >*<): >\$domain_username<"
 Write-Host "domain password (between >*<): >\$domain_password<"
-Write-Host "vm_site: $vm_site"
+Write-Host "vm_subnet: $vm_subnet"
 
 EOF
 
 	$powershell_script_contents .= <<'EOF';
-$type = [System.DirectoryServices.ActiveDirectory.DirectoryContextType]"Domain"
+$type = [System.DirectoryServices.ActiveDirectory.DirectoryContextType]"Forest"
 $directory_context = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext($type, $domain_dns_name, $domain_username, $domain_password)
+
+try {
+	$forest = [System.DirectoryServices.ActiveDirectory.Forest]::GetForest($directory_context)
+}
+catch {
+   if ($_.Exception.InnerException) {
+      $exception_message = $_.Exception.InnerException.Message
+   }
+   else {
+      $exception_message = $_.Exception.Message
+   }
+   Write-Host "ERROR: failed to connect to $domain_dns_name forest, username: $domain_username, password: $domain_password, error: $exception_message"
+   exit
+}
+
+Write-Host "calculating VM site information using subnet $vm_subnet"
+foreach ($site in $forest.Sites) {     
+    foreach ($subnet in $site.Subnets) {        
+        if ($subnet -match $vm_subnet) {            
+            $subnet_found = $true
+            $vm_site = $site                       
+        }
+        if ($subnet_found) { break }
+    }
+    if ($subnet_found) { break }
+}
+
+if ($vm_site -eq $null) {
+    Write-Host "ERROR: VM active directory site information could not be retrieved"
+	exit
+}
+else {
+	Write-host "VM belongs to site: $vm_site"
+}
+
 try {
    $domain = [System.DirectoryServices.ActiveDirectory.Domain]::GetDomain($directory_context)
 }
@@ -14566,7 +14608,7 @@ foreach ($dc in $domain_controllers) {
         }
     }
     else {
-        Write-Host "ignoring domain controller '$dc_name' as it does not belong to '$vm_site' site. it belongs to '$site' site" -ForegroundColor Yellow
+        Write-Host "ignoring domain controller '$dc_name' as it does not belong to '$vm_site' site. it belongs to '$site' site"
     }
 
     if (($delete -eq 1) -and $entry_deleted) { break }
