@@ -14442,10 +14442,11 @@ sub ad_search {
 	}
 	
 	# Get computer private IP address for active directory site calculation
-	my $current_private_ip_address = $self->get_private_ip_address();
-	my $current_private_subnet_mask = $self->get_private_subnet_mask();
-	my $vm_subnet = '';
-	$vm_subnet = convert_dotted_decimal_to_cidr($current_private_ip_address, $current_private_subnet_mask);
+	my $current_public_ip_address = $self->get_public_ip_address();
+	my $current_public_subnet_mask = $self->get_public_subnet_mask();
+	notify($ERRORS{'DEBUG'}, 0, "trying to convert the computers public ip: $current_public_ip_address and subnet mask: $current_public_subnet_mask to cidr format");
+	my $vm_subnet = $self->convert_dotted_decimal_to_cidr($current_public_ip_address, $current_public_subnet_mask);
+	notify($ERRORS{'DEBUG'}, 0, "cidr formatted public network: $vm_subnet");
 
 	my $attempt_limit = $arguments->{attempt_limit} || 3;
 	
@@ -14498,37 +14499,40 @@ Write-Host "domain: $domain_dns_name"
 Write-Host "domain username (between >*<): >\$domain_username<"
 Write-Host "domain password (between >*<): >\$domain_password<"
 Write-Host "vm_subnet: $vm_subnet"
-
 EOF
 
 	$powershell_script_contents .= <<'EOF';
-$type = [System.DirectoryServices.ActiveDirectory.DirectoryContextType]"Forest"
-$directory_context = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext($type, $domain_dns_name, $domain_username, $domain_password)
+if ($vm_subnet -ne '') {
+	$type = [System.DirectoryServices.ActiveDirectory.DirectoryContextType]"Forest"
+	$directory_context = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext($type, $domain_dns_name, $domain_username, $domain_password)
 
-try {
-	$forest = [System.DirectoryServices.ActiveDirectory.Forest]::GetForest($directory_context)
-}
-catch {
-   if ($_.Exception.InnerException) {
-      $exception_message = $_.Exception.InnerException.Message
-   }
-   else {
-      $exception_message = $_.Exception.Message
-   }
-   Write-Host "ERROR: failed to connect to $domain_dns_name forest, username: $domain_username, password: $domain_password, error: $exception_message"
-   exit
-}
+	try {
+		$forest = [System.DirectoryServices.ActiveDirectory.Forest]::GetForest($directory_context)
+	}
+	catch {
+		if ($_.Exception.InnerException) {
+			$exception_message = $_.Exception.InnerException.Message
+		}
+		else {
+			$exception_message = $_.Exception.Message
+		}
+		Write-Host "ERROR: failed to connect to $domain_dns_name forest, username: $domain_username, password: $domain_password, error: $exception_message"
+		exit
+	}
 
-Write-Host "calculating VM site information using subnet $vm_subnet"
-foreach ($site in $forest.Sites) {     
-    foreach ($subnet in $site.Subnets) {        
-        if ($subnet -match $vm_subnet) {            
-            $subnet_found = $true
-            $vm_site = $site                       
-        }
-        if ($subnet_found) { break }
-    }
-    if ($subnet_found) { break }
+	foreach ($site in $forest.Sites) {
+		foreach ($subnet in $site.Subnets) {
+			if ($subnet -match $vm_subnet) {
+				$subnet_found = $true
+				$vm_site = $site
+			}
+			if ($subnet_found) { break }
+		}
+		if ($subnet_found) { break }
+	}
+}
+else {
+	Write-Host "WARNING: VM subnet is not defined. Cannot calculate site information"
 }
 
 if ($vm_site -eq $null) {
@@ -14539,6 +14543,8 @@ else {
 	Write-host "VM belongs to site: $vm_site"
 }
 
+$type = [System.DirectoryServices.ActiveDirectory.DirectoryContextType]"Domain"
+$directory_context = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext($type, $domain_dns_name, $domain_username, $domain_password)
 try {
    $domain = [System.DirectoryServices.ActiveDirectory.Domain]::GetDomain($directory_context)
 }

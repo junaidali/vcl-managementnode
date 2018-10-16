@@ -867,17 +867,17 @@ sub makedatestring {
 =cut
 
 sub convert_dotted_decimal_string_to_integer {
-    my $dotdecimal = shift;
-    my $i = 24;
-    my $n = 0;
+	my ($dotdecimal) = shift;
+	my $i = 24;
+	my $n = 0;
 	my $dotted_decimal_regex = '^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$';
 
-	if (!$dotdecimal or $dotdecimal !~ /$dotted_decimal_regex/) {
-		notify($ERRORS{'WARNING'}, 0, "input argument was not passed correctly");
+	if (!defined($dotdecimal) or $dotdecimal !~ /$dotted_decimal_regex/) {
+		notify($ERRORS{'WARNING'}, 0, "input argument $dotdecimal was not passed correctly");
 		return -1;
 	}
 
-    if ($dotdecimal =~ /$dotted_decimal_regex/) {
+	if ($dotdecimal =~ /$dotted_decimal_regex/) {
         my @decimals = ($1,$2,$3,$4);
         foreach (@decimals) {
             if ($_ > 255 || $_ < 0) {
@@ -888,8 +888,7 @@ sub convert_dotted_decimal_string_to_integer {
 	    }
 	    return $n;
     }
-	notify($ERRORS{'WARNING'}, 0, "could not convert $dotdecimal to integer");
-    return -1;
+	return -1;
 } # end convert_dotted_decimal_string_to_integer
 
 #//////////////////////////////////////////////////////////////////////////////
@@ -903,16 +902,16 @@ sub convert_dotted_decimal_string_to_integer {
 =cut
 
 sub convert_dotted_decimal_to_cidr {
-	my ($ip_address, $subnet_mask) = @_;
+	my ($x, $ip_address, $subnet_mask) = @_;
 	my $dotted_decimal_regex = '^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$';
 
 	# Check the arguments
-	if (!$ip_address or $ip_address !~ /$dotted_decimal_regex/) {
-		notify($ERRORS{'WARNING'}, 0, "ip address argument was not passed correctly");
+	if (!defined($ip_address) or $ip_address !~ /$dotted_decimal_regex/) {
+		notify($ERRORS{'WARNING'}, 0, "ip address argument $ip_address was not passed correctly");
 		return;
 	}
-	if (!$subnet_mask or $subnet_mask !~ /$dotted_decimal_regex/) {
-		notify($ERRORS{'WARNING'}, 0, "subnet mask argument was not passed correctly");
+	if (!defined($subnet_mask) or $subnet_mask !~ /$dotted_decimal_regex/) {
+		notify($ERRORS{'WARNING'}, 0, "subnet mask argument $subnet_mask was not passed correctly");
 		return;
 	}
 
@@ -928,15 +927,14 @@ sub convert_dotted_decimal_to_cidr {
 
 	# convert mask integer to cidr
 	my $cidr_mask = 0;
-    while ( ($subnet_mask_int & (1 << (31-$cidr_mask))) != 0 ) {
-        if ($cidr_mask > 31) {
-            last;
-        }
-        $cidr_mask++;
-    }
+	while ( ($subnet_mask_int & (1 << (31-$cidr_mask))) != 0 ) {
+		if ($cidr_mask > 31) {
+			last;
+		}
+		$cidr_mask++;
+	}
 
 	# return cidr notation
-	notify($ERRORS{'DEBUG'}, 0, "calucated cidr subnet for ip address $ip_address and subnet mask $subnet_mask: $cidr_network/$cidr_mask");
 	return join "/", $cidr_network, $cidr_mask;
 } ## end convert_dotted_decimal_to_cidr
 
