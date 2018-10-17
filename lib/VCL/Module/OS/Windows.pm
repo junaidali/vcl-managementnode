@@ -14532,12 +14532,12 @@ if ($vm_subnet -ne '') {
 	}
 }
 else {
-	Write-Host "WARNING: VM subnet is not defined. Cannot calculate site information"
+	Write-Host "VM subnet is not defined. Cannot calculate site information"
 }
 
 if ($vm_site -eq $null) {
-    Write-Host "ERROR: VM active directory site information could not be retrieved"
-	exit
+    Write-Host "VM active directory site information could not be retrieved. Setting vm_site to Default-First-Site-Name"
+	$vm_site = 'Default-First-Site-Name'
 }
 else {
 	Write-host "VM belongs to site: $vm_site"
