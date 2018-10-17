@@ -102,6 +102,8 @@ our @EXPORT = qw(
 	check_time
 	clear_next_image_id
 	clearfromblockrequest
+	convert_dotted_decimal_string_to_integer
+	convert_dotted_decimal_to_cidr
 	convert_to_datetime
 	convert_to_epoch_seconds
 	create_management_node_directory
@@ -854,6 +856,87 @@ sub makedatestring {
 	my $datestring = sprintf("%04d-%02d-%02d %02d:%02d:%02d", $year, $mon, $mday, $hour, $min, $sec);
 	return $datestring;
 }
+
+#//////////////////////////////////////////////////////////////////////////////
+
+=head2  convert_dotted_decimal_string_to_integer
+
+ Parameters  : address in dotted decimal format
+ Returns     : integer
+ Description : takes a dotted decimal format string and converts it to integer
+=cut
+
+sub convert_dotted_decimal_string_to_integer {
+	my ($dotdecimal) = shift;
+	my $i = 24;
+	my $n = 0;
+	my $dotted_decimal_regex = '^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$';
+
+	if (!defined($dotdecimal) or $dotdecimal !~ /$dotted_decimal_regex/) {
+		notify($ERRORS{'WARNING'}, 0, "input argument $dotdecimal was not passed correctly");
+		return -1;
+	}
+
+	if ($dotdecimal =~ /$dotted_decimal_regex/) {
+        my @decimals = ($1,$2,$3,$4);
+        foreach (@decimals) {
+            if ($_ > 255 || $_ < 0) {
+                return -1;
+            }
+            $n += $_ << $i;
+            $i -= 8;
+	    }
+	    return $n;
+    }
+	return -1;
+} # end convert_dotted_decimal_string_to_integer
+
+#//////////////////////////////////////////////////////////////////////////////
+
+=head2  convert_dotted_decimal_to_cidr
+
+ Parameters  : ip address and subnet mask in dotted decimal format
+ Returns     : string (ip address in classless inter-domain routing format)
+ Description : takes an ip address in dotted decimal format and converts it to 
+			   classless inter-domain routing format
+=cut
+
+sub convert_dotted_decimal_to_cidr {
+	my ($x, $ip_address, $subnet_mask) = @_;
+	my $dotted_decimal_regex = '^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$';
+
+	# Check the arguments
+	if (!defined($ip_address) or $ip_address !~ /$dotted_decimal_regex/) {
+		notify($ERRORS{'WARNING'}, 0, "ip address argument $ip_address was not passed correctly");
+		return;
+	}
+	if (!defined($subnet_mask) or $subnet_mask !~ /$dotted_decimal_regex/) {
+		notify($ERRORS{'WARNING'}, 0, "subnet mask argument $subnet_mask was not passed correctly");
+		return;
+	}
+
+	# convert dotted decimal string to integer
+	my $ip_address_int = convert_dotted_decimal_string_to_integer($ip_address);
+	my $subnet_mask_int = convert_dotted_decimal_string_to_integer($subnet_mask);	
+
+	# generate network integer using bitwise AND
+	my $network_int = $ip_address_int & $subnet_mask_int;
+
+	# convert network integer to cidr
+	my $cidr_network = join ".",unpack("CCCC",pack("N",$network_int));
+
+	# convert mask integer to cidr
+	my $cidr_mask = 0;
+	while ( ($subnet_mask_int & (1 << (31-$cidr_mask))) != 0 ) {
+		if ($cidr_mask > 31) {
+			last;
+		}
+		$cidr_mask++;
+	}
+
+	# return cidr notation
+	return join "/", $cidr_network, $cidr_mask;
+} ## end convert_dotted_decimal_to_cidr
 
 #//////////////////////////////////////////////////////////////////////////////
 
