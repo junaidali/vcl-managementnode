@@ -926,8 +926,8 @@ sub capture {
 	my $os_is_64_bit = $self->os->is_64_bit() if $self->os->can("is_64_bit");
 	
 	# Attempt to get firmware
-	my $vm_firmware = $vmx_info->{firmware};
-	if ($vm_firmware eq "efi") {
+	my $vm_firmware = exists $vmx_info->{firmware} ? $vmx_info->{firmware} : 'bios';
+	if ($vm_firmware eq 'efi') {
 		notify($ERRORS{'DEBUG'}, 0, "setting uefi firmware for image");
 		$self->data->set_image_uefi(1);
 	}
